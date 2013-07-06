@@ -24,16 +24,28 @@ References:
 var fs = require('fs');
 var program = require('commander');
 var cheerio = require('cheerio');
+var rest    = require('restler');
 var HTMLFILE_DEFAULT = "index.html";
 var CHECKSFILE_DEFAULT = "checks.json";
 
 var assertFileExists = function(infile) {
     var instr = infile.toString();
     if(!fs.existsSync(instr)) {
-        console.log("%s does not exist. Exiting.", instr);
-        process.exit(1); // http://nodejs.org/api/process.html#process_process_exit_code
+	console.log("%s does not exist. Exiting.", instr);
+	process.exit(1); // http://nodejs.org/api/process.html#process_process_exit_code
     }
     return instr;
+};
+
+var assertUrlAccessible = function(url) {
+   var bad = false;
+   rest.get(url).on('error', function(err, response) { bad = true; });
+   if (bad)
+   {
+	console.log("Error connecting to URL. Exiting.");
+	process.exit(1);
+   }
+   return url;
 };
 
 var cheerioHtmlFile = function(htmlfile) {
@@ -44,13 +56,23 @@ var loadChecks = function(checksfile) {
     return JSON.parse(fs.readFileSync(checksfile));
 };
 
+var checkFromUrl = function(url, checksfile) {
+    var $;
+    rest.get(url).on('complete', function(data) { $ = cheerio.load(data); });
+    runChecks($, checksfile);
+};
+
 var checkHtmlFile = function(htmlfile, checksfile) {
     $ = cheerioHtmlFile(htmlfile);
+    return runChecks($, checksfile);
+};
+
+var runChecks = function($, checksfile) {
     var checks = loadChecks(checksfile).sort();
     var out = {};
     for(var ii in checks) {
-        var present = $(checks[ii]).length > 0;
-        out[checks[ii]] = present;
+	var present = $(checks[ii]).length > 0;
+	out[checks[ii]] = present;
     }
     return out;
 };
@@ -63,10 +85,19 @@ var clone = function(fn) {
 
 if(require.main == module) {
     program
-        .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
-        .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
-        .parse(process.argv);
-    var checkJson = checkHtmlFile(program.file, program.checks);
+	.option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
+	.option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists))
+	.option('-u, --url <url>', 'URL to check', clone(assertUrlAccessible))
+	.parse(process.argv);
+
+    var checkJson;
+    if (program.file)
+      checkJson = checkHtmlFile(program.file, program.checks);
+    else if (program.url)
+      checkJson = checkFromUrl(program.url, program.checks);
+    else
+      console.log("should do something here");
+
     var outJson = JSON.stringify(checkJson, null, 4);
     console.log(outJson);
 } else {

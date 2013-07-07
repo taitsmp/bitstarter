@@ -58,8 +58,19 @@ var loadChecks = function(checksfile) {
 
 var checkFromUrl = function(url, checksfile) {
     var $;
-    rest.get(url).on('complete', function(data) { $ = cheerio.load(data); });
-    runChecks($, checksfile);
+
+    //this doesn't  work. Why?
+    rest.get('http://tait-sup.herokuapp.com').on('complete', function(result, response) { 
+      if (result instanceof Error) {
+        console.log(result.message);
+        return;
+      }
+      $ = cheerio.load(result); 
+    });
+
+    //works..ish
+    $ = cheerio.load(rest.get('http://tait-sup.herokuapp.com'));
+    return runChecks($, checksfile);
 };
 
 var checkHtmlFile = function(htmlfile, checksfile) {

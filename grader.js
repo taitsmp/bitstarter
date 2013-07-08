@@ -37,16 +37,6 @@ var assertFileExists = function(infile) {
     return instr;
 };
 
-var assertUrlAccessible = function(url) {
-   var bad = false;
-/*
-   rest.get(url).on('error', function(err, response) { 
-     console.log("Error connecting to URL. Exiting.");
-     process.exit(1);
-   });*/
-   return url;
-};
-
 var cheerioHtmlFile = function(htmlfile) {
     return cheerio.load(fs.readFileSync(htmlfile));
 };
@@ -58,7 +48,7 @@ var loadChecks = function(checksfile) {
 var checkFromUrl = function(url, checksfile) {
 
     //this doesn't  work. Why?
-    rest.get('http://tait-sup.herokuapp.com').on('complete', function(result, response) { 
+    rest.get(url).on('complete', function(result, response) { 
       if (result instanceof Error) {
         console.log(result.message);
         process.exit(1);
@@ -85,7 +75,6 @@ var runChecks = function($, checksfile) {
 	var present = $(checks[ii]).length > 0;
 	out[checks[ii]] = present;
     }
-console.log('here'); 
     return out;
 };
 
@@ -99,7 +88,7 @@ if(require.main == module) {
     program
 	.option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
 	.option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists))
-	.option('-u, --url <url>', 'URL to check', clone(assertUrlAccessible))
+	.option('-u, --url <url>', 'URL to check')
 	.parse(process.argv);
 
     var checkJson;

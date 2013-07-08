@@ -39,12 +39,11 @@ var assertFileExists = function(infile) {
 
 var assertUrlAccessible = function(url) {
    var bad = false;
-   rest.get(url).on('error', function(err, response) { bad = true; });
-   if (bad)
-   {
-	console.log("Error connecting to URL. Exiting.");
-	process.exit(1);
-   }
+/*
+   rest.get(url).on('error', function(err, response) { 
+     console.log("Error connecting to URL. Exiting.");
+     process.exit(1);
+   });*/
    return url;
 };
 
@@ -57,26 +56,27 @@ var loadChecks = function(checksfile) {
 };
 
 var checkFromUrl = function(url, checksfile) {
-    var $;
 
     //this doesn't  work. Why?
     rest.get('http://tait-sup.herokuapp.com').on('complete', function(result, response) { 
       if (result instanceof Error) {
         console.log(result.message);
-        return;
+        process.exit(1);
       }
-      $ = cheerio.load(result); 
+      runChecksAndPrint(cheerio.load(result), checksfile);
     });
-
-    //works..ish
-    $ = cheerio.load(rest.get('http://tait-sup.herokuapp.com'));
-    return runChecks($, checksfile);
 };
 
 var checkHtmlFile = function(htmlfile, checksfile) {
     $ = cheerioHtmlFile(htmlfile);
-    return runChecks($, checksfile);
+    runChecksAndPrint($, checksfile);
 };
+
+var runChecksAndPrint = function($, checksfile) {
+    var out = runChecks($, checksfile);
+    var outJson = JSON.stringify(out, null, 4);
+    console.log(outJson);
+}
 
 var runChecks = function($, checksfile) {
     var checks = loadChecks(checksfile).sort();
@@ -85,6 +85,7 @@ var runChecks = function($, checksfile) {
 	var present = $(checks[ii]).length > 0;
 	out[checks[ii]] = present;
     }
+console.log('here'); 
     return out;
 };
 
@@ -103,14 +104,12 @@ if(require.main == module) {
 
     var checkJson;
     if (program.file)
-      checkJson = checkHtmlFile(program.file, program.checks);
+      checkHtmlFile(program.file, program.checks);
     else if (program.url)
-      checkJson = checkFromUrl(program.url, program.checks);
+      checkFromUrl(program.url, program.checks);
     else
       console.log("should do something here");
 
-    var outJson = JSON.stringify(checkJson, null, 4);
-    console.log(outJson);
 } else {
     exports.checkHtmlFile = checkHtmlFile;
 }

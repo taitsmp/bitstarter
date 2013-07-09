@@ -87,17 +87,15 @@ var clone = function(fn) {
 if(require.main == module) {
     program
 	.option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
-	.option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists))
+	.option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
 	.option('-u, --url <url>', 'URL to check')
 	.parse(process.argv);
 
     var checkJson;
-    if (program.file)
-      checkHtmlFile(program.file, program.checks);
-    else if (program.url)
+    if (program.url)
       checkFromUrl(program.url, program.checks);
-    else
-      console.log("should do something here");
+    else if (program.file)
+      checkHtmlFile(program.file, program.checks);
 
 } else {
     exports.checkHtmlFile = checkHtmlFile;

@@ -50,7 +50,7 @@ var checkFromUrl = function(url, checksfile) {
     //this doesn't  work. Why?
     rest.get(url).on('complete', function(result, response) { 
       if (result instanceof Error) {
-        console.log(result.message);
+        console.error(result.message);
         process.exit(1);
       }
       runChecksAndPrint(cheerio.load(result), checksfile);
@@ -99,4 +99,5 @@ if(require.main == module) {
 
 } else {
     exports.checkHtmlFile = checkHtmlFile;
+    exports.checkFromUrl = checkFromUrl;
 }
